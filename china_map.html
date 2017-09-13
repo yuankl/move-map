@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>china</title>
+    <script src="d3.v4.min.js"></script>
+</head>
+<style>
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+</style>
+<body>
+<script type="text/javascript">
+    //创建svg
+    var width = 1060, height = 800;
+
+    var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+    //创建投影(projection)
+    var projection = d3.geoMercator().translate([width / 2, height / 2]).center([105, 38]).scale(550);
+
+    //创建path
+    var path = d3.geoPath().projection(projection);
+    //绘制飞线
+    var p2p = [{
+            "from": {
+                "name":"拉萨",
+                "coordinate": [116.4551,40.2539]
+            },
+            "to": {
+                "name":"北京",
+                "coordinate": [91.1865,30.1465]
+            }
+        }];
+   
+    var tweenDash = function tweenDash() {
+            //This function is used to animate the dash-array property, which is a
+            //  nice hack that gives us animation along some arbitrary path (in this
+            //  case, makes it look like a line is being drawn from point A to B)
+            var len = this.getTotalLength(),
+                interpolate = d3.interpolateString("0," + len, len + "," + len);
+
+            return function(t) { return interpolate(t); };
+        };
+    //解析json
+    d3.json("china.geo.json", function(json) {
+
+        svg.selectAll("path")
+                .data(json.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .on('mouseover', function(data) {
+                    d3.select(this).attr('fill', 'rgba(2,2,139,0.61)');
+
+                    //创建显示tooltip用的矩形
+                    svg.append("rect")
+                            .attr("id", "tooltip1")
+                            .attr("x", 50)
+                            .attr("y",50)
+                            .attr("width",140)
+                            .attr("height",130)
+                            .attr("stroke","black")
+                            .attr("fill","none")
+                    ;
+
+                    //创建显示tooltip文本
+                    svg.append("text")
+                            .attr("id", "tooltip2")
+                            .attr("x", 100)
+                            .attr("y", 100)
+                            .attr("text-anchor", "middle")
+                            .attr("font-family", "sans-serif")
+                            .attr("font-size", "11px")
+                            .attr("font-weight", "bold")
+                            .attr("fill", "black")
+                            .text(data.properties.name);
+                })
+                .on('mouseout', function(data) {
+                    d3.select(this).attr('fill', 'rgba(128,124,139,0.61)');
+                    //Remove the tooltip
+                    d3.select("#tooltip1").remove();
+                    d3.select("#tooltip2").remove();
+                })
+                .attr('fill', 'rgba(128,124,139,0.61)')
+                .attr('stroke', 'rgba(255,255,255,1)')
+                .attr('stroke-width', 1)
+        ;
+    });
+    svg.selectAll(".line")
+            .data([{
+                type: "LineString",
+                coordinates: [[116.4551,40.2539],[91.1865,30.1465]]
+            }])
+            .enter()
+            .append("path")
+            .attr("d",path)
+            .attr("class", "line")
+            .call(lineTransition);
+    var lineTransition = function lineTransition(path) {
+            path.transition()
+                //NOTE: Change this number (in ms) to make lines draw faster or slower
+                .duration(5500)
+                .attrTween("stroke-dasharray", tweenDash)
+                .each("end", function(d,i) { 
+                    ////Uncomment following line to re-transition
+                    //d3.select(this).call(transition); 
+                    
+                    //We might want to do stuff when the line reaches the target,
+                    //  like start the pulsating or add a new point or tell the
+                    //  NSA to listen to this guy's phone calls
+                    //doStuffWhenLineFinishes(d,i);
+                });
+        };
+
+</script>
+</body>
+</html>
